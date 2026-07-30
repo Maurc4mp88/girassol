@@ -2,430 +2,1073 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para o meu Girassol 🌻</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FutRoguelike - Balanced & Expanded</title>
+    <!-- PeerJS para Multiplayer Online Gratuito via WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        /* Fontes elegantes para um tom romântico */
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&display=swap');
-
         :root {
-            --gold: #FFD700;
-            --gold-light: #ffea70;
-            --dark-bg: #0a0806;
-            --text-light: #fcf8f2;
+            --bg-color: #121214;
+            --card-bg: #202024;
+            --primary: #00875f;
+            --primary-hover: #00b37e;
+            --secondary: #2b70c9;
+            --danger: #f75a68;
+            --text: #e1e1e6;
+            --subtext: #8d8d99;
+            --gold: #e7a74e;
+            --diamond: #00f0ff;
+            --boss: #a855f7;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+        
+        #app { width: 100%; max-width: 480px; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid #323238; }
+        h1, h2, h3, h4 { text-align: center; margin-bottom: 8px; }
+        
+        button {
+            width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 6px;
+            color: white; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 5px;
+        }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { background: #4d4d57; cursor: not-allowed; opacity: 0.6; }
+        
+        input {
+            width: 100%; padding: 12px; background: #121214; border: 1px solid #323238;
+            border-radius: 6px; color: white; margin-bottom: 10px; text-align: center; font-size: 1.1rem;
         }
 
-        body, html {
-            background-color: var(--dark-bg);
-            color: var(--text-light);
-            font-family: 'Cormorant Garamond', serif;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
+        .hidden { display: none !important; }
 
-        /* 1. Fundo com a imagem escura (Camada mais baixa) */
-        .background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-image: 
-                radial-gradient(circle at center, rgba(10, 8, 6, 0.4) 0%, rgba(10, 8, 6, 0.95) 100%),
-                url('https://th.bing.com/th/id/R.4fd2a872850b0bfcecea5f14051bda80?rik=rSnHFB%2b2UFbJHQ&riu=http%3a%2f%2fpngimg.com%2fuploads%2fsunflower%2fsunflower_PNG13402.png&ehk=x1Nujg88WeObYZb68VNkMwrtpcD1bf4XiThN0DE%2foUI%3d&risl=1&pid=ImgRaw&r=0');
-            background-size: cover;
-            background-position: center;
-            opacity: 0.5;
-            z-index: 1; /* Fica no fundo */
-        }
+        /* Header Display */
+        .header-stats { display: flex; justify-content: space-around; background: #18181b; padding: 10px; border-radius: 8px; }
+        .stat-box { text-align: center; }
+        .stat-box span { display: block; font-size: 0.75rem; color: var(--subtext); }
+        .stat-box strong { font-size: 1.05rem; color: var(--gold); }
 
-        /* 2. Container de animações (Camada do meio) */
-        #magic-environment {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 2; /* Fica por cima da imagem e por baixo do texto */
-            overflow: hidden;
-        }
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-top: 5px; }
+        .tab-btn { flex: 1; padding: 8px 4px; font-size: 0.78rem; background: #29292e; border: none; color: white; border-radius: 4px; }
+        .tab-btn.active { background: var(--primary); }
 
-        /* Animações (Pólen, Pétalas, Girassóis desfocados) */
-        .dust {
-            position: absolute;
-            background-color: var(--gold-light);
-            border-radius: 50%;
-            box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.4);
-            animation: drift linear infinite;
-        }
+        /* Rarity & Trait Badges */
+        .rarity-tag { font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-left: 4px; }
+        .rarity-comum { background: #323238; color: #fff; }
+        .rarity-raro { background: var(--gold); color: #000; }
+        .rarity-lendario { background: var(--diamond); color: #000; }
 
-        .petal {
-            position: absolute;
-            width: 12px;
-            height: 25px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 50% 0 50% 0;
-            box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-            animation: flutter linear infinite;
-            opacity: 0.8;
-        }
+        .badge-trait { display: inline-block; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 3px; }
+        .trait-normal { background: #323238; color: #aaa; }
+        .trait-gold { background: rgba(231, 167, 78, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+        .trait-diamond { background: rgba(0, 240, 255, 0.2); color: var(--diamond); border: 1px solid var(--diamond); }
+        .trait-special { background: rgba(168, 85, 247, 0.2); color: var(--boss); border: 1px solid var(--boss); }
 
-        .bg-sunflower {
-            position: absolute;
-            font-size: 8rem;
-            filter: blur(6px) drop-shadow(0 0 20px var(--gold));
-            opacity: 0.15;
-            animation: float-flower linear infinite;
+        /* Player Lists */
+        .player-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 280px; overflow-y: auto; }
+        .player-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #29292e; padding: 10px; border-radius: 6px; font-size: 0.88rem;
+            border: 2px solid transparent;
         }
+        .player-item.selected { border-color: var(--gold); background: #32323d; }
+        .player-info { display: flex; flex-direction: column; }
+        .player-stats { color: #8d8d99; font-size: 0.78rem; margin-top: 2px; }
+        .badge { background: #121214; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
+        .btn-sm { width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0; }
+        .btn-danger { background: var(--danger); }
 
-        @keyframes drift {
-            0% { transform: translateY(10vh) translateX(0) scale(0.5); opacity: 0; }
-            50% { opacity: 0.6; }
-            100% { transform: translateY(-100vh) translateX(30px) scale(1.2); opacity: 0; }
-        }
+        /* Match Arena */
+        .match-score { display: flex; justify-content: space-between; align-items: center; background: #18181b; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .score-num { font-size: 1.8rem; font-weight: bold; color: var(--gold); }
+        
+        .duel-box { background: #0f0f12; border: 1px solid #27272a; border-radius: 8px; padding: 12px; margin-top: 10px; }
+        .dice-result { background: #18181b; padding: 8px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
+        
+        /* Boss Display */
+        .boss-card { border: 2px solid var(--boss); background: #1a0f2e !important; }
 
-        @keyframes flutter {
-            0% { transform: translateY(-10vh) translateX(0) rotateZ(0deg) rotateY(0deg); opacity: 0; }
-            10% { opacity: 0.8; }
-            90% { opacity: 0.8; }
-            100% { transform: translateY(110vh) translateX(50px) rotateZ(360deg) rotateY(360deg); opacity: 0; }
-        }
+        /* History List */
+        .history-item { background: #29292e; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-        @keyframes float-flower {
-            0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; }
-            20% { opacity: 0.15; }
-            80% { opacity: 0.15; }
-            100% { transform: translateY(-30vh) rotate(180deg) scale(1.2); opacity: 0; }
-        }
-
-        /* 3. Tela Inicial (Camada mais alta para tampar tudo no início) */
-        #intro {
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            transition: opacity 1.5s ease-out;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            background-color: var(--dark-bg);
-        }
-
-        .flower-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            animation: breathe 3s ease-in-out infinite;
-            filter: drop-shadow(0 0 20px var(--gold));
-        }
-
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255,215,0,0.4)); }
-            50% { transform: scale(1.1); filter: drop-shadow(0 0 30px rgba(255,215,0,0.8)); }
-        }
-
-        .btn-open {
-            padding: 15px 40px;
-            background: transparent;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.5s ease;
-            text-transform: uppercase;
-        }
-
-        .btn-open:hover {
-            background: var(--gold);
-            color: var(--dark-bg);
-            box-shadow: 0 0 30px var(--gold);
-        }
-
-        /* 4. O Texto (Camada da frente) */
-        #story {
-            display: none;
-            width: 100vw;
-            position: relative;
-            z-index: 3; /* Fica acima das animações */
-        }
-
-        .slide {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 10%;
-            text-align: center;
-        }
-
-        .text-content {
-            font-size: 1.8rem;
-            line-height: 1.6;
-            opacity: 0;
-            transform: translateY(40px);
-            transition: all 1.8s cubic-bezier(0.25, 1, 0.5, 1);
-            text-shadow: 2px 2px 15px rgba(0, 0, 0, 1);
-            max-width: 600px;
-        }
-
-        .slide.visible .text-content {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .highlight {
-            color: var(--gold);
-            font-style: italic;
-            font-weight: 600;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        .cursive {
-            font-family: 'Great Vibes', cursive;
-            color: var(--gold);
-            font-size: 3.8rem;
-            display: block;
-            margin-top: 10px;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-            font-weight: normal;
-        }
-
-        .final-slide {
-            flex-direction: column;
-        }
-
-        .final-text {
-            font-family: 'Great Vibes', cursive;
-            font-size: 5.5rem;
-            color: var(--gold);
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
-            margin-top: 20px;
-        }
-
-        /* Indicador de rolagem */
-        .scroll-indicator {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--gold);
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0.7;
-            animation: bounce 2s infinite;
-            z-index: 5;
-            text-shadow: 2px 2px 5px black;
-        }
-
-        .scroll-indicator::after {
-            content: '↓';
-            font-size: 1.5rem;
-            margin-top: 5px;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, 10px); }
-        }
-
-        /* Ajustes para Celular */
-        @media (max-width: 768px) {
-            .text-content { font-size: 1.45rem; padding: 0 5%; }
-            .cursive { font-size: 3rem; }
-            .final-text { font-size: 4.5rem; }
-            .bg-sunflower { font-size: 5rem; }
+        #matchLog { 
+            font-family: monospace; font-size: 0.82rem; max-height: 140px; overflow-y: auto; 
+            background: #0a0a0c; padding: 10px; border-radius: 6px; border: 1px solid #222; margin-top: 10px; line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <!-- Camada 1: Foto do Fundo -->
-    <div class="background"></div>
+<div id="app">
+
+    <!-- TELA 1: LOBBY -->
+    <div id="lobbyScreen" class="card">
+        <h1>FutRoguelike</h1>
+        <p style="text-align: center; color: var(--subtext); margin-bottom: 15px;">Selecione o Modo de Jogo</p>
+        
+        <button id="btnSinglePlayer" style="background: var(--secondary);">🎮 Modo 1 Jogador (Solo)</button>
+        
+        <div style="margin: 15px 0; text-align: center; color: var(--subtext); font-size: 0.85rem;">— MULTIPLAYER ONLINE —</div>
+
+        <button id="btnCreateRoom">Criar Sala Multiplayer</button>
+        <div style="margin: 8px 0; text-align: center; color: var(--subtext);">ou</div>
+        <input type="text" id="roomCodeInput" placeholder="Código da Sala">
+        <button id="btnJoinRoom" style="background: #29292e;">Entrar na Sala</button>
+
+        <div id="lobbyStatus" style="margin-top: 15px; text-align: center; color: #e1e1e6; font-size: 0.9rem;"></div>
+    </div>
+
+    <!-- TELA 2: GAME DASHBOARD -->
+    <div id="gameScreen" class="card hidden">
+        <!-- Header -->
+        <div class="header-stats">
+            <div class="stat-box"><span>TURNO</span><strong id="uiTurn">1</strong></div>
+            <div class="stat-box"><span>PONTOS</span><strong id="uiPoints">5 PTS</strong></div>
+            <div class="stat-box"><span>SUAS VIDAS</span><strong id="uiLives" style="color:var(--danger)">❤️❤️❤️</strong></div>
+            <div class="stat-box" id="uiEnemyLivesBox"><span>VIDAS RIVAL</span><strong id="uiEnemyLives" style="color:var(--danger)">❤️❤️❤️</strong></div>
+        </div>
+
+        <!-- Abas -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tabBtnTeam" onclick="switchTab('team')">Time (<span id="teamCap">0</span>/4)</button>
+            <button class="tab-btn" id="tabBtnShop" onclick="switchTab('shop')">Mercado</button>
+            <button class="tab-btn" id="tabBtnTrain" onclick="switchTab('train')">Treino (<span id="trainCount">0</span>/3)</button>
+            <button class="tab-btn" id="tabBtnMatch" onclick="switchTab('match')">Partida</button>
+            <button class="tab-btn" id="tabBtnHistory" onclick="switchTab('history')">Histórico</button>
+        </div>
+
+        <!-- ABA 1: TIME -->
+        <div id="tab-team" class="tab-content" style="margin-top: 10px;">
+            <h3>Seu Elenco (Min 3 / Máx 4)</h3>
+            <div id="myTeamList" class="player-list"></div>
+        </div>
+
+        <!-- ABA 2: MERCADO -->
+        <div id="tab-shop" class="tab-content hidden" style="margin-top: 10px;">
+            <h3>Mercado de Transferências</h3>
+            <button onclick="rerollShop()" style="background: #323238; font-size: 0.85rem; margin-bottom: 8px;">
+                🔄 Atualizar Mercado (1 Ponto)
+            </button>
+            <div id="shopList" class="player-list"></div>
+        </div>
+
+        <!-- ABA 3: TREINO -->
+        <div id="tab-train" class="tab-content hidden" style="margin-top: 10px;">
+            <h3>Fila de Treinamento Prioritária</h3>
+            <p style="font-size: 0.8rem; color: var(--subtext); text-align: center; margin-bottom: 8px;">
+                Até 3 atletas ganham +3 ATK e +3 DEF no próximo turno.
+            </p>
+            <div id="trainList" class="player-list"></div>
+        </div>
+
+        <!-- ABA 4: PARTIDA / DUELOS -->
+        <div id="tab-match" class="tab-content hidden" style="margin-top: 10px;">
+            
+            <div id="waitingNextTurnScreen" class="hidden" style="text-align: center; padding: 20px 10px;">
+                <h3 style="color: var(--gold);">⏳ Partida Concluída!</h3>
+                <p style="margin: 15px 0; color: var(--subtext);">Aguardando seu adversário terminar para iniciarem o próximo turno juntos...</p>
+            </div>
+
+            <div id="activeMatchScreen">
+                <!-- Aviso de time insuficiente -->
+                <div id="minTeamWarning" class="card hidden" style="background:#2d1517; border-color:var(--danger); text-align:center; margin-bottom:10px;">
+                    <strong style="color:var(--danger);">⚠️ ELENCO INCOMPLETO!</strong><br>
+                    <span style="font-size:0.8rem;">Você precisa de pelo menos 3 jogadores no elenco para disputar a partida.</span>
+                </div>
+
+                <div id="matchContentArea">
+                    <!-- Card do Adversário -->
+                    <div id="opponentCard" class="card" style="background: #18181b; margin-bottom: 10px;"></div>
+
+                    <div class="match-score">
+                        <div>
+                            <small style="color:var(--subtext)">VOCÊ</small>
+                            <div class="score-num" id="uiMyGoals">0</div>
+                        </div>
+                        <div style="font-size: 0.8rem; color:var(--subtext); text-align:center;">
+                            RODADA<br><strong id="uiRoundNum" style="font-size:1.2rem; color:#fff;">1 / 6</strong>
+                        </div>
+                        <div style="text-align:right">
+                            <small style="color:var(--subtext)" id="uiOpponentName">OPONENTE</small>
+                            <div class="score-num" id="uiOppGoals">0</div>
+                        </div>
+                    </div>
+
+                    <div class="duel-box">
+                        <h4 id="roundTypeTitle" style="color:var(--gold)">RODADA 1: SEU ATAQUE</h4>
+                        <p id="roundInstruction" style="font-size: 0.8rem; color: var(--subtext); text-align: center;">
+                            Escolha 1 jogador (Cada atleta só ataca e defende 1 vez por jogo).
+                        </p>
+
+                        <div id="matchSelectionList" class="player-list"></div>
+
+                        <button id="btnExecuteRound" disabled onclick="executeCurrentRound()">🎲 Rolar Dados & Jogar Rodada</button>
+
+                        <div id="roundResultDisplay" class="dice-result hidden"></div>
+                    </div>
+
+                    <div id="matchLog">Aguardando início da partida...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ABA 5: HISTÓRICO DE PARTIDAS -->
+        <div id="tab-history" class="tab-content hidden" style="margin-top: 10px;">
+            <h3>Histórico de Jogos</h3>
+            <div id="historyList" class="player-list"></div>
+        </div>
+
+    </div>
+
+    <!-- TELA 3: GAME OVER -->
+    <div id="endScreen" class="card hidden" style="text-align: center;">
+        <h1 id="endTitle">FIM DE JOGO</h1>
+        <p id="endDesc" style="margin: 15px 0; font-size: 1.1rem;"></p>
+        <button onclick="location.reload()">Jogar Novamente</button>
+    </div>
+
+</div>
+
+<script>
+/* ==========================================
+   ESTADO GLOBAL DO JOGO
+   ========================================== */
+let peer = null;
+let conn = null;
+let isHost = false;
+let isSinglePlayer = false;
+
+let gameState = {
+    turn: 1,
+    points: 5, // Começa com 5 pontos (Mais fácil no início)
+    lives: 3,
+    opponentLives: 3,
+    myTeam: [],
+    shop: [],
+    trainQueue: [],
+    history: [],
+
+    currentOpponent: {
+        name: "",
+        team: [],
+        isBoss: false,
+        trait: null
+    },
+
+    localTurnFinished: false,
+    remoteTurnFinished: false,
+
+    match: {
+        active: false,
+        round: 1,
+        myGoals: 0,
+        oppGoals: 0,
+        myAttackCounts: {},
+        myDefendCounts: {},
+        oppAttackCounts: {},
+        oppDefendCounts: {},
+        selectedPlayerId: null
+    }
+};
+
+const MAX_TEAM_SIZE = 4;
+const MIN_TEAM_SIZE = 3;
+
+// LISTA COMPLETA DE TRAITS DE JOGADORES
+const TRAITS_DEFINITIONS = {
+    normal: { name: 'Normal', desc: 'Gol vale 1', rarity: 'comum', cost: 1 },
+    gold: { name: '⚽ Gol de Ouro', desc: 'Gol vale 2 no placar!', rarity: 'raro', cost: 1 },
+    diamond: { name: '💎 Gol de Diamante', desc: 'Gol vale 3 no placar!', rarity: 'lendario', cost: 2 },
+    goleiro: { name: '🧤 Goleiro', desc: 'Anula 100% o ataque na defesa! (-80% ATK próprio)', rarity: 'raro', cost: 2 },
+    atacante: { name: '⚡ Atacante', desc: '90% de chance de gol certo no ataque! (-80% DEF própria)', rarity: 'raro', cost: 2 },
+    decisivo: { name: '🎲 Decisivo', desc: '50% gol. Se fizer, empata o placar instantaneamente!', rarity: 'lendario', cost: 2 },
+    famoso: { name: '🌟 Famoso', desc: 'Ganha +1 Ponto ao ser escalado na rodada. (-20% Atk/Def)', rarity: 'raro', cost: 1 },
+    midia: { name: '📺 Mídia', desc: 'Ganha +2 Pontos ao fazer gol! (-5% Atk)', rarity: 'lendario', cost: 2 },
+    devorador: { name: '🔥 Devorador', desc: 'A cada gol, ganha +50% de Atk e Def! (-30% Atk inicial)', rarity: 'lendario', cost: 2 },
+    experiente: { name: '🧠 Experiente', desc: 'Diminui a defesa adversária em 30% na rodada.', rarity: 'raro', cost: 2 },
+    capitao: { name: '👑 Capitão', desc: 'Aumenta o ataque da equipe em +30% na rodada.', rarity: 'raro', cost: 2 },
+    reserva: { name: '💤 Reserva', desc: '+1 Ponto extra no fim da partida se NÃO jogar. (+50% Atk/Def se acionado)', rarity: 'raro', cost: 1 }
+};
+
+// EXPANSÃO DE CHEFES (8 PASSIVAS VARIADAS)
+const SPECIAL_BOSS_TRAITS = [
+    { id: 'muralha', name: '🛡️ Muralha de Aço', desc: 'Defensores inimigos ganham +25% de Defesa base.' },
+    { id: 'ataque', name: '⚡ Ataque Relâmpago', desc: 'Atacantes inimigos ganham +25% de Ataque base.' },
+    { id: 'sortudo', name: '🎲 Sorte de Campeão', desc: 'Os dados do chefe rolam no mínimo 45.' },
+    { id: 'contra', name: '👑 Rei do Contra-Ataque', desc: 'Se o chefe defender seu ataque, ele ganha +1 Gol extra!' },
+    { id: 'vantagem', name: '🧱 Vantagem Caseira', desc: 'O chefe começa a partida com 1 Gol de vantagem!' },
+    { id: 'titas', name: '💪 Força Titânica', desc: 'Todos os atletas do chefe recebem +15 em todos os atributos.' },
+    { id: 'pressao', name: '🔥 Pressão Absoluta', desc: 'O seu dado de rolagem sofre uma penalidade de -15.' },
+    { id: 'intocavel', name: '🧿 Visão Mística', desc: 'O ataque do chefe ignora defesas automáticas de goleiro.' }
+];
+
+// EXPANSÃO DE NOMES DE CRAQUES E CLUBES
+const NAMES_FIRST = [
+    "Carlos", "Lucas", "Ronaldo", "Enzo", "Gabriel", "Matheus", "Neymar", "Thiago", "Victor", "Felipe",
+    "Rodrigo", "Bruno", "Kylian", "Lionel", "Vinicius", "Rodrygo", "Endrick", "Casemiro", "Alisson", "Raphinha",
+    "Zico", "Romário", "Rivaldo", "Kaká", "Adriano", "Erling", "Jude", "Jamal", "Pedri", "Gavi",
+    "Lamine", "Cristiano", "Luka", "Antoine", "Kevin", "Mohamed", "Sadio", "Son", "Harry"
+];
+
+const NAMES_LAST = [
+    "Silva", "Santos", "Ferreira", "Oliveira", "Souza", "Lima", "Costa", "Rodrigues", "Almeida", "Ribeiro",
+    "Mbappé", "Messi", "Junior", "Ronaldo", "Modric", "Haaland", "Bellingham", "Yamal", "De Bruyne", "Kane",
+    "Garrincha", "Pelé", "Barbosa", "Teixeira", "Araújo", "Machado", "Fernandes", "Carvalho", "Cardoso", "Mendes"
+];
+
+const TEAM_PREFIXES = [
+    "Real", "Atlético", "FC", "Esporte Clube", "União", "Dynamos", "Sporting", "Inter", "Sociedade", "Grêmio",
+    "Botafogo", "Clube", "Associação", "Deportivo", "Olimpia", "Nacional", "Racing"
+];
+
+const TEAM_NAMES = [
+    "Dragões", "Tigres", "Águias", "Leões", "Fantasmas", "Galácticos", "Vikings", "Trovões", "Fênix", "Gladiadores",
+    "Falcões", "Estrelas", "Titãs", "Tubarões", "Condores", "Guerrilheiros", "Imperadores", "Panteras", "Búfalos"
+];
+
+function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+/* GERADORES PROCEDURAIS */
+function generateRandomPlayer(statBoost = 0, traitKey = 'normal') {
+    const name = `${NAMES_FIRST[getRandomInt(0, NAMES_FIRST.length - 1)]} ${NAMES_LAST[getRandomInt(0, NAMES_LAST.length - 1)]}`;
+    let attack = getRandomInt(14 + statBoost, 30 + statBoost);
+    let defense = getRandomInt(14 + statBoost, 30 + statBoost);
+
+    if (traitKey === 'goleiro') attack = Math.max(3, Math.floor(attack * 0.2));
+    if (traitKey === 'atacante') defense = Math.max(3, Math.floor(defense * 0.2));
+    if (traitKey === 'famoso') { attack = Math.floor(attack * 0.8); defense = Math.floor(defense * 0.8); }
+    if (traitKey === 'midia') attack = Math.floor(attack * 0.95);
+    if (traitKey === 'devorador') attack = Math.floor(attack * 0.7);
+
+    return { 
+        id: Math.random().toString(36).substr(2, 9), 
+        name, attack, defense, 
+        trait: traitKey
+    };
+}
+
+function generateOpponent(turn) {
+    const isBoss = (turn % 3 === 0);
+    const name = `${isBoss ? '👑 CHEFE: ' : ''}${TEAM_PREFIXES[getRandomInt(0, TEAM_PREFIXES.length - 1)]} ${TEAM_NAMES[getRandomInt(0, TEAM_NAMES.length - 1)]}`;
     
-    <!-- Camada 2: Elementos Flutuantes -->
-    <div id="magic-environment"></div>
+    // Curva de Dificuldade Suavizada: Turno 1 bem mais fácil (baseStat 10)
+    const baseStat = (turn - 1) * 7 + 10; 
+    
+    let trait = isBoss ? SPECIAL_BOSS_TRAITS[getRandomInt(0, SPECIAL_BOSS_TRAITS.length - 1)] : null;
+    let bossBonus = (trait && trait.id === 'titas') ? 15 : 0;
 
-    <!-- Tela Inicial (Cobre tudo até clicar) -->
-    <div id="intro">
-        <div class="flower-icon">🌻</div>
-        <button class="btn-open" onclick="startStory()">Toque para abrir</button>
-    </div>
+    const team = [
+        { id: 'opp_1', name: `Atacante`, attack: getRandomInt(baseStat + 8, baseStat + 18) + bossBonus, defense: getRandomInt(baseStat + 2, baseStat + 10) + bossBonus, trait: 'normal' },
+        { id: 'opp_2', name: `Defensor`, attack: getRandomInt(baseStat + 2, baseStat + 10) + bossBonus, defense: getRandomInt(baseStat + 8, baseStat + 18) + bossBonus, trait: 'normal' },
+        { id: 'opp_3', name: `Meia`, attack: getRandomInt(baseStat + 5, baseStat + 14) + bossBonus, defense: getRandomInt(baseStat + 5, baseStat + 14) + bossBonus, trait: 'normal' }
+    ];
 
-    <!-- Dica de Scroll -->
-    <div class="scroll-indicator" id="scroll-hint">ROLE PARA BAIXO</div>
+    return { name, team, isBoss, trait };
+}
 
-    <!-- Camada 3: Textos -->
-    <div id="story">
-        <div class="slide">
-            <div class="text-content">
-                "Os girassóis me lembram <span class="cursive">você...</span>"
-            </div>
-        </div>
+function generateShopSlot(turn) {
+    const rand = Math.random();
+    const statBoost = (turn - 1) * 4;
 
-        <div class="slide">
-            <div class="text-content">
-                Eles seguem a luz, mesmo nos dias mais nublados...<br> 
-                e de alguma forma, é <span class="highlight">exatamente isso que você faz comigo.</span>
-            </div>
-        </div>
+    let traitKey = 'normal';
 
-        <div class="slide">
-            <div class="text-content">
-                Você ilumina meus dias sem nem perceber, traz calma quando tudo parece confuso, e faz tudo ao redor ficar mais bonito só por existir.
-            </div>
-        </div>
+    if (rand < 0.35) {
+        traitKey = 'normal';
+    } else if (rand < 0.80) {
+        const rareTraits = ['gold', 'famoso', 'reserva', 'experiente', 'capitao', 'goleiro', 'atacante'];
+        traitKey = rareTraits[getRandomInt(0, rareTraits.length - 1)];
+    } else {
+        const legendaryTraits = ['diamond', 'decisivo', 'midia', 'devorador'];
+        traitKey = legendaryTraits[getRandomInt(0, legendaryTraits.length - 1)];
+    }
 
-        <div class="slide">
-            <div class="text-content">
-                Eu não sei explicar tudo o que sinto, mas sei que, assim como os girassóis procuram o sol... <br><br>
-                <span class="highlight">Eu sempre vou procurar você.</span>
-            </div>
-        </div>
+    const traitDef = TRAITS_DEFINITIONS[traitKey];
+    return { 
+        cost: traitDef.cost, 
+        rarity: traitDef.rarity, 
+        player: generateRandomPlayer(statBoost, traitKey) 
+    };
+}
 
-        <div class="slide">
-            <div class="text-content">
-                Porque é ao seu lado que eu encontro <span class="cursive" style="font-size: 4.5rem; margin-top: -10px;">Luz.</span>
-            </div>
-        </div>
+/* ==========================================
+   REDE E MULTIPLAYER
+   ========================================== */
+document.getElementById('btnSinglePlayer').onclick = () => {
+    isSinglePlayer = true;
+    document.getElementById('lobbyScreen').classList.add('hidden');
+    document.getElementById('gameScreen').classList.remove('hidden');
+    document.getElementById('uiEnemyLivesBox').style.display = 'none';
+    initGame();
+};
 
-        <div class="slide">
-            <div class="text-content">
-                Quero estar ao seu lado em cada fase da sua vida, vendo você crescer, conquistar seus sonhos e se tornar tudo aquilo que você merece ser.
-            </div>
-        </div>
+document.getElementById('btnCreateRoom').onclick = () => {
+    peer = new Peer();
+    peer.on('open', (id) => {
+        isHost = true;
+        document.getElementById('lobbyStatus').innerHTML = `Código da Sala: <strong style="color:#00ff66; font-size:1.2rem;">${id}</strong><br>Envie para o adversário!`;
+    });
+    peer.on('connection', (c) => { conn = c; setupConnection(); });
+};
 
-        <div class="slide">
-            <div class="text-content">
-                Se algum dia você se sentir perdida, lembra que até os girassóis passam por dias sem sol... 
-            </div>
-        </div>
+document.getElementById('btnJoinRoom').onclick = () => {
+    const code = document.getElementById('roomCodeInput').value.trim();
+    if (!code) return alert("Digite o código da sala!");
+    peer = new Peer();
+    peer.on('open', () => {
+        conn = peer.connect(code);
+        setupConnection();
+    });
+};
 
-        <div class="slide">
-            <div class="text-content">
-                Mas ainda assim <span class="highlight">continuam de pé</span>, esperando a luz voltar.<br><br> E eu vou estar aqui por você, pra te apoiar em tudo que for possível.
-            </div>
-        </div>
+function setupConnection() {
+    conn.on('open', () => {
+        document.getElementById('lobbyScreen').classList.add('hidden');
+        document.getElementById('gameScreen').classList.remove('hidden');
+        initGame();
+    });
+    conn.on('data', (data) => handleNetworkData(data));
+}
 
-        <div class="slide">
-            <div class="text-content">
-                Eu não quero só fazer parte dos momentos bons... eu estarei aqui nos piores dias também, e você sempre poderá contar comigo.
-            </div>
-        </div>
+function sendNetworkData(data) { if (conn && conn.open) conn.send(data); }
 
-        <div class="slide final-slide">
-            <div class="text-content">
-                <span class="final-text">Eu te amo</span>
-                <div class="flower-icon" style="margin-top: 40px; font-size: 3.5rem;">🌻</div>
-            </div>
-        </div>
-    </div>
+function handleNetworkData(data) {
+    if (data.type === 'FINISHED_MATCH_TURN') {
+        gameState.remoteTurnFinished = true;
+        if (!data.won) gameState.opponentLives--;
+        checkBothFinishedTurn();
+    }
+}
 
-    <script>
-        // Função que cria as animações do fundo
-        function createMagicEnvironment() {
-            const container = document.getElementById('magic-environment');
-            const isMobile = window.innerWidth < 768;
-            
-            const dustCount = isMobile ? 30 : 60;
-            const petalsCount = isMobile ? 12 : 25;
-            const bgFlowersCount = isMobile ? 4 : 7;
+/* ==========================================
+   LÓGICA PRINCIPAL DO JOGO
+   ========================================== */
+function initGame() {
+    // TIME INICIAL MAIS FORTE: Atributos 18-32 e 1 Jogador com Habilidade Garantida!
+    const startingTraits = ['gold', 'goleiro', 'capitao', 'famoso', 'experiente'];
+    const guaranteedTrait = startingTraits[getRandomInt(0, startingTraits.length - 1)];
 
-            // 1. Pólen
-            for (let i = 0; i < dustCount; i++) {
-                let dust = document.createElement('div');
-                dust.className = 'dust';
-                let size = Math.random() * 4 + 2; 
-                dust.style.width = `${size}px`;
-                dust.style.height = `${size}px`;
-                dust.style.left = `${Math.random() * 100}vw`;
-                dust.style.animationDuration = `${Math.random() * 10 + 10}s`;
-                dust.style.animationDelay = `${Math.random() * 10}s`;
-                container.appendChild(dust);
+    gameState.myTeam = [
+        generateRandomPlayer(6, guaranteedTrait),
+        generateRandomPlayer(6, 'normal'),
+        generateRandomPlayer(6, 'normal')
+    ];
+
+    gameState.currentOpponent = generateOpponent(gameState.turn);
+    refreshShop();
+    resetMatchState();
+    updateUI();
+}
+
+function refreshShop() {
+    gameState.shop = [
+        generateShopSlot(gameState.turn),
+        generateShopSlot(gameState.turn),
+        generateShopSlot(gameState.turn)
+    ];
+}
+
+function rerollShop() {
+    if (gameState.points < 1) return alert("Você precisa de pelo menos 1 Ponto para atualizar o mercado!");
+    gameState.points -= 1;
+    refreshShop();
+    updateUI();
+}
+
+/* ==========================================
+   ENGINE DE PARTIDA E DUELOS
+   ========================================== */
+function resetMatchState() {
+    let opp = gameState.currentOpponent;
+    let initialOppGoals = (opp.trait && opp.trait.id === 'vantagem') ? 1 : 0;
+
+    gameState.match = {
+        active: true,
+        round: 1,
+        myGoals: 0,
+        oppGoals: initialOppGoals,
+        myAttackCounts: {},
+        myDefendCounts: {},
+        oppAttackCounts: {},
+        oppDefendCounts: {},
+        selectedPlayerId: null
+    };
+    gameState.myTeam.forEach(p => {
+        gameState.match.myAttackCounts[p.id] = 0;
+        gameState.match.myDefendCounts[p.id] = 0;
+    });
+    opp.team.forEach(p => {
+        gameState.match.oppAttackCounts[p.id] = 0;
+        gameState.match.oppDefendCounts[p.id] = 0;
+    });
+
+    document.getElementById('matchLog').innerHTML = initialOppGoals > 0 ? "<b>🧱 Vantagem Caseira:</b> O Chefe começou ganhando por 1x0!" : "Aguardando início da partida...";
+    document.getElementById('roundResultDisplay').classList.add('hidden');
+}
+
+function renderMatchRoundUI() {
+    const m = gameState.match;
+    const warningEl = document.getElementById('minTeamWarning');
+    const contentArea = document.getElementById('matchContentArea');
+
+    if (gameState.myTeam.length < MIN_TEAM_SIZE) {
+        warningEl.classList.remove('hidden');
+        contentArea.classList.add('hidden');
+        return;
+    } else {
+        warningEl.classList.add('hidden');
+        contentArea.classList.remove('hidden');
+    }
+
+    document.getElementById('uiMyGoals').innerText = m.myGoals;
+    document.getElementById('uiOppGoals').innerText = m.oppGoals;
+    document.getElementById('uiOpponentName').innerText = gameState.currentOpponent.name;
+    document.getElementById('uiRoundNum').innerText = `${m.round} / 6`;
+
+    const isMyAttackRound = (m.round % 2 !== 0); 
+    const titleEl = document.getElementById('roundTypeTitle');
+    const instructionEl = document.getElementById('roundInstruction');
+    const container = document.getElementById('matchSelectionList');
+
+    container.innerHTML = "";
+    document.getElementById('btnExecuteRound').disabled = (m.selectedPlayerId === null);
+
+    if (isMyAttackRound) {
+        titleEl.innerText = `RODADA ${m.round}: SEU ATAQUE ⚔️`;
+        titleEl.style.color = "var(--gold)";
+        instructionEl.innerText = "Escolha 1 jogador para Atacar (Máx 1 ataque por jogador).";
+
+        gameState.myTeam.forEach(p => {
+            const attacksUsed = m.myAttackCounts[p.id] || 0;
+            const disabled = attacksUsed >= 1;
+            const isSelected = (m.selectedPlayerId === p.id);
+            const traitDef = TRAITS_DEFINITIONS[p.trait] || TRAITS_DEFINITIONS.normal;
+
+            container.innerHTML += `
+                <div class="player-item ${isSelected ? 'selected' : ''}" style="${disabled ? 'opacity:0.4;' : 'cursor:pointer;'}"
+                     onclick="${disabled ? '' : `selectMatchPlayer('${p.id}')`}">
+                    <div class="player-info">
+                        <strong>${p.name}</strong>
+                        <span class="badge-trait trait-${p.trait === 'normal' ? 'normal' : (p.trait === 'gold' ? 'gold' : (p.trait === 'diamond' ? 'diamond' : 'special'))}">
+                            ${traitDef.name}
+                        </span>
+                        <div class="player-stats">
+                            <span class="badge">⚔️ ATK: ${p.attack}</span>
+                            <span style="color:${attacksUsed >= 1 ? 'var(--danger)' : '#00ff66'}">${attacksUsed >= 1 ? 'Já Atacou' : 'Disponível'}</span>
+                        </div>
+                    </div>
+                    <button class="btn-sm" ${disabled ? 'disabled' : ''}>${isSelected ? 'Selecionado' : 'Escolher'}</button>
+                </div>
+            `;
+        });
+    } else {
+        titleEl.innerText = `RODADA ${m.round}: SUA DEFESA 🛡️`;
+        titleEl.style.color = "var(--secondary)";
+        instructionEl.innerText = "O adversário vai atacar! Escolha 1 jogador para Defender.";
+
+        gameState.myTeam.forEach(p => {
+            const defendsUsed = m.myDefendCounts[p.id] || 0;
+            const disabled = defendsUsed >= 1;
+            const isSelected = (m.selectedPlayerId === p.id);
+            const traitDef = TRAITS_DEFINITIONS[p.trait] || TRAITS_DEFINITIONS.normal;
+
+            container.innerHTML += `
+                <div class="player-item ${isSelected ? 'selected' : ''}" style="${disabled ? 'opacity:0.4;' : 'cursor:pointer;'}"
+                     onclick="${disabled ? '' : `selectMatchPlayer('${p.id}')`}">
+                    <div class="player-info">
+                        <strong>${p.name}</strong>
+                        <span class="badge-trait trait-${p.trait === 'normal' ? 'normal' : (p.trait === 'gold' ? 'gold' : (p.trait === 'diamond' ? 'diamond' : 'special'))}">
+                            ${traitDef.name}
+                        </span>
+                        <div class="player-stats">
+                            <span class="badge">🛡️ DEF: ${p.defense}</span>
+                            <span style="color:${defendsUsed >= 1 ? 'var(--danger)' : '#00ff66'}">${defendsUsed >= 1 ? 'Já Defendeu' : 'Disponível'}</span>
+                        </div>
+                    </div>
+                    <button class="btn-sm" ${disabled ? 'disabled' : ''}>${isSelected ? 'Selecionado' : 'Escolher'}</button>
+                </div>
+            `;
+        });
+    }
+}
+
+function selectMatchPlayer(id) {
+    gameState.match.selectedPlayerId = id;
+    renderMatchRoundUI();
+}
+
+function executeCurrentRound() {
+    const m = gameState.match;
+    if (!m.selectedPlayerId) return;
+
+    const isMyAttackRound = (m.round % 2 !== 0);
+    let myPlayer = gameState.myTeam.find(p => p.id === m.selectedPlayerId);
+    let opp = gameState.currentOpponent;
+
+    if (isMyAttackRound) m.myAttackCounts[myPlayer.id] = (m.myAttackCounts[myPlayer.id] || 0) + 1;
+    else m.myDefendCounts[myPlayer.id] = (m.myDefendCounts[myPlayer.id] || 0) + 1;
+
+    let oppPlayer;
+    if (isMyAttackRound) {
+        let availableOpp = opp.team.filter(p => (m.oppDefendCounts[p.id] || 0) < 1);
+        if (availableOpp.length === 0) availableOpp = opp.team;
+        oppPlayer = availableOpp.sort((a,b) => b.defense - a.defense)[0];
+        m.oppDefendCounts[oppPlayer.id] = (m.oppDefendCounts[oppPlayer.id] || 0) + 1;
+    } else {
+        let availableOpp = opp.team.filter(p => (m.oppAttackCounts[p.id] || 0) < 1);
+        if (availableOpp.length === 0) availableOpp = opp.team;
+        oppPlayer = availableOpp.sort((a,b) => b.attack - a.attack)[0];
+        m.oppAttackCounts[oppPlayer.id] = (m.oppAttackCounts[oppPlayer.id] || 0) + 1;
+    }
+
+    let extraLogs = [];
+
+    if (myPlayer.trait === 'famoso') {
+        gameState.points += 1;
+        extraLogs.push("🌟 <b>Famoso:</b> Gerou +1 Ponto por participar da rodada!");
+    }
+
+    let myAtkBonus = 1.0, myDefBonus = 1.0;
+    if (myPlayer.trait === 'reserva') {
+        myAtkBonus *= 1.5; myDefBonus *= 1.5;
+        extraLogs.push("💤 <b>Reserva Acionado:</b> Ganhou +50% de força ao entrar!");
+    }
+
+    if (myPlayer.trait === 'capitao' && isMyAttackRound) {
+        myAtkBonus *= 1.3;
+        extraLogs.push("👑 <b>Capitão:</b> Aumentou o Ataque em +30%!");
+    }
+
+    // Rolagem d100
+    let diceA = getRandomInt(1, 100);
+    let diceD = getRandomInt(1, 100);
+
+    // Passivas do Chefe em Roldadas
+    if (opp.trait && opp.trait.id === 'sortudo') {
+        if (!isMyAttackRound) diceA = Math.max(45, diceA);
+        else diceD = Math.max(45, diceD);
+    }
+
+    if (opp.trait && opp.trait.id === 'pressao') {
+        if (isMyAttackRound) diceA = Math.max(1, diceA - 15);
+        else diceD = Math.max(1, diceD - 15);
+        extraLogs.push("🔥 <b>Pressão Absoluta do Chefe:</b> Seu dado perdeu 15 pontos!");
+    }
+
+    let atkStat = isMyAttackRound ? Math.floor(myPlayer.attack * myAtkBonus) : oppPlayer.attack;
+    let defStat = isMyAttackRound ? oppPlayer.defense : Math.floor(myPlayer.defense * myDefBonus);
+
+    if (isMyAttackRound && myPlayer.trait === 'experiente') {
+        defStat = Math.floor(defStat * 0.7);
+        extraLogs.push("🧠 <b>Experiente:</b> Reduziu a defesa adversária em -30%!");
+    }
+
+    if (opp.trait && opp.trait.id === 'muralha' && isMyAttackRound) defStat = Math.floor(defStat * 1.25);
+    if (opp.trait && opp.trait.id === 'ataque' && !isMyAttackRound) atkStat = Math.floor(atkStat * 1.25);
+
+    const buffA = diceA / 2;
+    const buffD = diceD / 2;
+
+    let finalAtk = Number((atkStat * (1 + buffA / 100)).toFixed(1));
+    let finalDef = Number((defStat * (1 + buffD / 100)).toFixed(1));
+
+    let isGoal = false;
+
+    // Chefe Visão Mística ignora Goeliro
+    let isGoalKeeperIgnored = (opp.trait && opp.trait.id === 'intocavel' && !isMyAttackRound);
+
+    if (!isMyAttackRound && myPlayer.trait === 'goleiro' && !isGoalKeeperIgnored) {
+        finalDef = 9999;
+        isGoal = false;
+        extraLogs.push("🧤 <b>Goleiro Espetacular:</b> Anulou totalmente o ataque inimigo!");
+    } 
+    else if (isMyAttackRound && myPlayer.trait === 'atacante') {
+        isGoal = (getRandomInt(1, 100) <= 90);
+        if (isGoal) finalAtk = finalDef + 10;
+        extraLogs.push("⚡ <b>Atacante Nato:</b> Chute potente (90% de chance)!");
+    } 
+    else {
+        isGoal = finalAtk > finalDef;
+    }
+
+    let goalsScored = 0;
+
+    if (isGoal) {
+        if (isMyAttackRound) {
+            goalsScored = 1;
+            if (myPlayer.trait === 'gold') goalsScored = 2;
+            if (myPlayer.trait === 'diamond') goalsScored = 3;
+
+            if (myPlayer.trait === 'decisivo') {
+                m.myGoals = Math.max(m.myGoals + 1, m.oppGoals);
+                extraLogs.push(`🎲 <b>Decisivo:</b> Fez gol e empatou o placar em ${m.myGoals} Gols!`);
+            } else {
+                m.myGoals += goalsScored;
             }
 
-            // 2. Pétalas
-            for (let i = 0; i < petalsCount; i++) {
-                let petal = document.createElement('div');
-                petal.className = 'petal';
-                petal.style.left = `${Math.random() * 100}vw`;
-                let scale = Math.random() * 0.6 + 0.5;
-                petal.style.transform = `scale(${scale})`;
-                petal.style.animationDuration = `${Math.random() * 8 + 7}s`;
-                petal.style.animationDelay = `${Math.random() * 15}s`;
-                container.appendChild(petal);
+            if (myPlayer.trait === 'midia') {
+                gameState.points += 2;
+                extraLogs.push("📺 <b>Mídia:</b> Gerou +2 Pontos pelo gol marcado!");
             }
 
-            // 3. Girassóis Borrados
-            for (let i = 0; i < bgFlowersCount; i++) {
-                let flower = document.createElement('div');
-                flower.className = 'bg-sunflower';
-                flower.innerHTML = '🌻';
-                flower.style.left = `${Math.random() * 90}vw`;
-                flower.style.animationDuration = `${Math.random() * 20 + 20}s`;
-                flower.style.animationDelay = `${Math.random() * 15}s`;
-                let rotation = Math.random() * 360;
-                flower.style.transform = `rotate(${rotation}deg)`;
-                container.appendChild(flower);
+            if (myPlayer.trait === 'devorador') {
+                myPlayer.attack = Math.floor(myPlayer.attack * 1.5);
+                myPlayer.defense = Math.floor(myPlayer.defense * 1.5);
+                extraLogs.push("🔥 <b>Devorador:</b> Aumentou sua força em +50%!");
+            }
+        } else {
+            goalsScored = 1;
+            m.oppGoals += goalsScored;
+        }
+    } else {
+        // PASSIVA CHEFE: Rei do Contra-Ataque
+        if (isMyAttackRound && opp.trait && opp.trait.id === 'contra') {
+            m.oppGoals += 1;
+            extraLogs.push("👑 <b>Rei do Contra-Ataque:</b> O Chefe defendeu e marcou +1 Gol!");
+        }
+    }
+
+    let attackerName = isMyAttackRound ? myPlayer.name : oppPlayer.name;
+    let defenderName = isMyAttackRound ? oppPlayer.name : myPlayer.name;
+
+    const resBox = document.getElementById('roundResultDisplay');
+    resBox.classList.remove('hidden');
+    resBox.innerHTML = `
+        <strong>${isGoal ? `⚽ GOL! (+${goalsScored} No Placar)` : '🧤 DEFESA / NÃO FOI GOL!'}</strong><br>
+        ⚔️ <b>Atacante (${attackerName}):</b> Final <b>${finalAtk}</b><br>
+        🛡️ <b>Defensor (${defenderName}):</b> Final <b>${finalDef}</b>
+        ${extraLogs.length > 0 ? `<br><small style="color:var(--gold);">${extraLogs.join('<br>')}</small>` : ''}
+    `;
+
+    const logEl = document.getElementById('matchLog');
+    logEl.innerHTML = `<div><b>[Rodada ${m.round}]</b> ${isGoal ? `⚽ GOL!` : '🧤 DEFESA!'} ${attackerName} (${finalAtk}) vs ${defenderName} (${finalDef})</div>` + logEl.innerHTML;
+
+    m.selectedPlayerId = null;
+    m.round++;
+
+    if (m.round > 6) {
+        finishMatchEvents();
+    } else {
+        renderMatchRoundUI();
+    }
+}
+
+function finishMatchEvents() {
+    const m = gameState.match;
+    const playerWon = m.myGoals >= m.oppGoals;
+
+    gameState.myTeam.forEach(p => {
+        if (p.trait === 'reserva') {
+            const atkUsed = m.myAttackCounts[p.id] || 0;
+            const defUsed = m.myDefendCounts[p.id] || 0;
+            if (atkUsed === 0 && defUsed === 0) {
+                gameState.points += 1;
             }
         }
+    });
 
-        // Função do botão Iniciar
-        function startStory() {
-            const intro = document.getElementById('intro');
-            intro.style.opacity = '0'; // Esmaece a tela preta
-            
-            setTimeout(() => {
-                intro.style.display = 'none'; // Some com a tela inicial
-                
-                // Exibe a história e as animações
-                document.getElementById('story').style.display = 'block';
-                document.getElementById('scroll-hint').style.display = 'flex';
-                
-                createMagicEnvironment();
-                setupScrollAnimation();
-                
-                window.scrollTo(0, 0); // Garante que começa no topo
-            }, 1000); // 1 segundo de transição
+    let pointsEarned = 0;
+    if (playerWon) {
+        pointsEarned = gameState.currentOpponent.isBoss ? 3 : 2;
+    } else {
+        pointsEarned = 1; // Consolação
+        gameState.lives--;
+    }
+    gameState.points += pointsEarned;
+
+    gameState.history.unshift({
+        turn: gameState.turn,
+        opponent: gameState.currentOpponent.name,
+        myGoals: m.myGoals,
+        oppGoals: m.oppGoals,
+        won: playerWon,
+        pointsEarned: pointsEarned
+    });
+
+    gameState.localTurnFinished = true;
+
+    if (!isSinglePlayer) {
+        sendNetworkData({ type: 'FINISHED_MATCH_TURN', won: playerWon });
+        if (!gameState.remoteTurnFinished) {
+            document.getElementById('activeMatchScreen').classList.add('hidden');
+            document.getElementById('waitingNextTurnScreen').classList.remove('hidden');
         }
+    }
 
-        // Função que revela os textos ao descer a tela
-        function setupScrollAnimation() {
-            const slides = document.querySelectorAll('.slide');
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                        
-                        if(entry.target.classList.contains('final-slide')) {
-                            document.getElementById('scroll-hint').style.display = 'none';
-                        }
-                    } else {
-                        entry.target.classList.remove('visible');
-                    }
-                });
-            }, {
-                threshold: 0.45 
-            });
+    checkBothFinishedTurn();
+}
 
-            slides.forEach(slide => observer.observe(slide));
+function checkBothFinishedTurn() {
+    if (isSinglePlayer) {
+        advanceNextTurnProcess();
+        return;
+    }
+
+    if (gameState.localTurnFinished && gameState.remoteTurnFinished) {
+        advanceNextTurnProcess();
+    }
+}
+
+function advanceNextTurnProcess() {
+    gameState.trainQueue.forEach(id => {
+        let p = gameState.myTeam.find(item => item.id === id);
+        if (p) { p.attack += 3; p.defense += 3; }
+    });
+    gameState.trainQueue = [];
+
+    gameState.turn++;
+    gameState.localTurnFinished = false;
+    gameState.remoteTurnFinished = false;
+
+    gameState.currentOpponent = generateOpponent(gameState.turn);
+    refreshShop();
+    resetMatchState();
+
+    document.getElementById('waitingNextTurnScreen').classList.add('hidden');
+    document.getElementById('activeMatchScreen').classList.remove('hidden');
+
+    switchTab('team');
+    updateUI();
+
+    checkGameOverCondition();
+}
+
+function checkGameOverCondition() {
+    if (isSinglePlayer) {
+        if (gameState.lives <= 0) showEndScreen(false);
+    } else {
+        if (gameState.lives <= 0) showEndScreen(false);
+        else if (gameState.opponentLives <= 0) showEndScreen(true);
+    }
+}
+
+function showEndScreen(won) {
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('endScreen').classList.remove('hidden');
+    const title = document.getElementById('endTitle');
+    const desc = document.getElementById('endDesc');
+
+    if (isSinglePlayer) {
+        title.innerText = "☠️ FIM DA CORRIDA SOLO";
+        title.style.color = "var(--danger)";
+        desc.innerHTML = `Você perdeu 3 vezes e foi eliminado.<br><br><strong>Seu time sobreviveu até o TURNO ${gameState.turn - 1}!</strong>`;
+    } else {
+        if (won) {
+            title.innerText = "🏆 CAMPEÃO!";
+            title.style.color = "#00ff66";
+            desc.innerText = "Seu adversário perdeu todas as vidas! Você venceu a partida!";
+        } else {
+            title.innerText = "☠️ ELIMINADO!";
+            title.style.color = "var(--danger)";
+            desc.innerText = "Você perdeu 3 vezes e foi eliminado.";
         }
-    </script>
+    }
+}
+
+/* ==========================================
+   AÇÕES DE MERCADO E COMPRA
+   ========================================== */
+function buyShopSlot(index) {
+    const slot = gameState.shop[index];
+    if (!slot) return;
+
+    if (gameState.points < slot.cost) {
+        return alert("Pontos insuficientes para esta contratação!");
+    }
+
+    if (gameState.myTeam.length >= MAX_TEAM_SIZE) {
+        return alert(`Seu elenco já está cheio! (Máx ${MAX_TEAM_SIZE} jogadores). Descarte alguém antes.`);
+    }
+
+    gameState.points -= slot.cost;
+    gameState.myTeam.push(slot.player);
+    gameState.shop.splice(index, 1);
+
+    updateUI();
+}
+
+function discardPlayer(id) {
+    if (gameState.myTeam.length <= MIN_TEAM_SIZE) {
+        return alert(`Mínimo de ${MIN_TEAM_SIZE} jogadores necessário no elenco para conseguir jogar a partida!`);
+    }
+    const pIndex = gameState.myTeam.findIndex(p => p.id === id);
+    if (pIndex > -1) {
+        gameState.trainQueue = gameState.trainQueue.filter(tId => tId !== id);
+        gameState.myTeam.splice(pIndex, 1);
+        updateUI();
+    }
+}
+
+function toggleTrainQueue(id) {
+    const index = gameState.trainQueue.indexOf(id);
+    if (index > -1) {
+        gameState.trainQueue.splice(index, 1);
+    } else {
+        if (gameState.trainQueue.length >= 3) return alert("A fila aceita no máximo 3 jogadores!");
+        gameState.trainQueue.push(id);
+    }
+    updateUI();
+}
+
+/* ==========================================
+   INTERFACE (UI)
+   ========================================== */
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`tabBtn${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (tabName === 'match') {
+        renderMatchRoundUI();
+    } else if (tabName === 'history') {
+        renderHistoryUI();
+    }
+}
+
+function updateUI() {
+    document.getElementById('uiTurn').innerText = gameState.turn;
+    document.getElementById('uiPoints').innerText = `${gameState.points} PTS`;
+    document.getElementById('uiLives').innerText = "❤️".repeat(Math.max(0, gameState.lives));
+    document.getElementById('uiEnemyLives').innerText = "❤️".repeat(Math.max(0, gameState.opponentLives));
+    document.getElementById('teamCap').innerText = gameState.myTeam.length;
+    document.getElementById('trainCount').innerText = gameState.trainQueue.length;
+
+    renderTeam();
+    renderShop();
+    renderTrain();
+    renderOpponentCard();
+}
+
+function renderTeam() {
+    const container = document.getElementById('myTeamList');
+    container.innerHTML = "";
+    
+    gameState.myTeam.forEach(p => {
+        const traitDef = TRAITS_DEFINITIONS[p.trait] || TRAITS_DEFINITIONS.normal;
+        let traitClass = p.trait === 'normal' ? 'normal' : (p.trait === 'gold' ? 'gold' : (p.trait === 'diamond' ? 'diamond' : 'special'));
+
+        container.innerHTML += `
+            <div class="player-item">
+                <div class="player-info">
+                    <strong>${p.name}</strong>
+                    <span class="badge-trait trait-${traitClass}">${traitDef.name}</span>
+                    <div class="player-stats">
+                        <span class="badge">⚔️ ATK: ${p.attack}</span>
+                        <span class="badge">🛡️ DEF: ${p.defense}</span>
+                    </div>
+                </div>
+                <button class="btn-sm btn-danger" onclick="discardPlayer('${p.id}')">Descartar (0 Pts)</button>
+            </div>
+        `;
+    });
+}
+
+function renderShop() {
+    const container = document.getElementById('shopList');
+    container.innerHTML = "";
+    
+    const isTeamFull = gameState.myTeam.length >= MAX_TEAM_SIZE;
+
+    gameState.shop.forEach((slot, index) => {
+        const p = slot.player;
+        const traitDef = TRAITS_DEFINITIONS[p.trait] || TRAITS_DEFINITIONS.normal;
+        let traitClass = p.trait === 'normal' ? 'normal' : (p.trait === 'gold' ? 'gold' : (p.trait === 'diamond' ? 'diamond' : 'special'));
+
+        container.innerHTML += `
+            <div class="player-item">
+                <div class="player-info">
+                    <div>
+                        <strong>${p.name}</strong> 
+                        <span class="rarity-tag rarity-${slot.rarity}">${slot.rarity}</span>
+                    </div>
+                    <div>
+                        <span class="badge-trait trait-${traitClass}">${traitDef.name}</span>
+                        <div style="font-size:0.7rem; color:var(--subtext); margin-top:2px;">${traitDef.desc}</div>
+                    </div>
+                    <div class="player-stats">
+                        <span class="badge">⚔️ ATK: ${p.attack}</span>
+                        <span class="badge">🛡️ DEF: ${p.defense}</span>
+                    </div>
+                </div>
+                <button class="btn-sm" ${isTeamFull ? 'disabled' : ''} onclick="buyShopSlot(${index})">
+                    ${isTeamFull ? 'Elenco Cheio' : `Contratar (${slot.cost} PTS)`}
+                </button>
+            </div>
+        `;
+    });
+}
+
+function renderTrain() {
+    const container = document.getElementById('trainList');
+    container.innerHTML = "";
+    
+    gameState.myTeam.forEach(p => {
+        const inQueue = gameState.trainQueue.includes(p.id);
+        const queuePos = gameState.trainQueue.indexOf(p.id) + 1;
+        
+        container.innerHTML += `
+            <div class="player-item" style="${inQueue ? 'border: 1px solid #00ff66;' : ''}">
+                <div class="player-info">
+                    <strong>${p.name} ${inQueue ? `<span style="color:#00ff66">(Fila #${queuePos})</span>` : ''}</strong>
+                    <div class="player-stats">ATK: ${p.attack} | DEF: ${p.defense}</div>
+                </div>
+                <button class="btn-sm" style="background:${inQueue ? 'var(--danger)' : '#29292e'}" onclick="toggleTrainQueue('${p.id}')">
+                    ${inQueue ? 'Remover' : 'Treinar'}
+                </button>
+            </div>
+        `;
+    });
+}
+
+function renderOpponentCard() {
+    const container = document.getElementById('opponentCard');
+    const opp = gameState.currentOpponent;
+    
+    if (opp.isBoss) container.className = "card boss-card";
+    else container.className = "card";
+
+    let playersHtml = opp.team.map(p => `
+        <div style="font-size:0.8rem; background:#121214; padding:4px 8px; border-radius:4px; margin-top:4px;">
+            <b>${p.name}:</b> ATK: ${p.attack} | DEF: ${p.defense}
+        </div>
+    `).join("");
+
+    container.innerHTML = `
+        <h3 style="color:${opp.isBoss ? 'var(--boss)' : 'var(--danger)'};">${opp.name}</h3>
+        ${opp.trait ? `<div style="font-size:0.8rem; color:var(--gold); margin-bottom:6px;"><b>Passiva do Chefe:</b> ${opp.trait.name} - ${opp.trait.desc}</div>` : ''}
+        ${playersHtml}
+    `;
+}
+
+function renderHistoryUI() {
+    const container = document.getElementById('historyList');
+    container.innerHTML = "";
+
+    if (gameState.history.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:var(--subtext); margin-top:10px;'>Nenhuma partida registrada ainda.</p>";
+        return;
+    }
+
+    gameState.history.forEach(item => {
+        container.innerHTML += `
+            <div class="history-item">
+                <div>
+                    <strong>Turno ${item.turn} vs ${item.opponent}</strong>
+                    <div style="font-size:0.75rem; color:var(--subtext);">Placar: ${item.myGoals} x ${item.oppGoals}</div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-weight:bold; color:${item.won ? '#00ff66' : 'var(--danger)'}">${item.won ? 'VITÓRIA' : 'DERROTA'}</span>
+                    <div style="font-size:0.75rem; color:var(--gold);">+${item.pointsEarned} PTS</div>
+                </div>
+            </div>
+        `;
+    });
+}
+</script>
 </body>
 </html>
