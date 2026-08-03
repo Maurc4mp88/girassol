@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HaxBall Pro 2D - Músicas do YouTube</title>
+    <title>HaxBall Pro 2D - Som Integrado</title>
     <!-- PeerJS para Multiplayer Online P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -90,7 +90,7 @@
     <h1>HaxBall Pro</h1>
     
     <div class="customization-box">
-        <h3>Customização</h3>
+        <h3>Customização do Jogador</h3>
         <div class="custom-row">
             <label>Avatar / Número:</label>
             <input type="text" id="cust-number" value="10" maxlength="3">
@@ -104,14 +104,20 @@
             <input type="color" id="cust-border" value="#000000">
         </div>
         
-        <!-- BUSCA DE MÚSICA NO YOUTUBE -->
+        <!-- SELETOR DE ÁUDIO INTEGRADO -->
         <div style="margin-top:8px; text-align: left;">
-            <label style="font-size: 12px; font-weight: bold;">🎵 Música de Gol (YouTube):</label>
-            <div style="display: flex; gap: 4px; margin-top: 4px;">
-                <input type="text" id="cust-music" placeholder="Nome ou Link do YouTube" style="flex: 1; padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid #555; background: #333; color: white;">
-                <button type="button" onclick="searchMusic()" style="padding: 4px 8px; font-size: 11px; font-weight: bold; background: #e74c3c; border: none; border-radius: 4px; color: white; cursor: pointer;">🔍 Buscar</button>
+            <label style="font-size: 12px; font-weight: bold;">🔊 Som de Gol:</label>
+            <select id="sound-type" onchange="toggleMp3Input()" style="width: 100%; padding: 5px; margin-top: 3px; font-size: 12px; border-radius: 4px; border: 1px solid #555; background: #333; color: white;">
+                <option value="horn">🎺 Buzina de Estádio + Apito</option>
+                <option value="techno">⚡ Som Eletrônico de Gol</option>
+                <option value="custom">🎵 Link de Áudio MP3 Próprio</option>
+            </select>
+            
+            <div id="mp3-box" style="display: none; margin-top: 5px;">
+                <input type="text" id="cust-music" placeholder="Cole o link direto .mp3 aqui" style="width: 100%; padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid #555; background: #333; color: white;">
             </div>
-            <div id="music-status" style="font-size: 11px; color: #f1c40f; margin-top: 3px;">Música padrão pronta</div>
+
+            <button type="button" onclick="testSound()" style="width: 100%; margin-top: 5px; padding: 6px; font-size: 11px; font-weight: bold; background: #9b59b6; border: none; border-radius: 4px; color: white; cursor: pointer;">🔊 Testar Som Agora</button>
         </div>
     </div>
 
@@ -135,10 +141,8 @@
     <button id="btn-kick">CHUTAR</button>
 </div>
 
-<!-- PLAYER INVISÍVEL DO YOUTUBE PARA ÁUDIO DE FUNDO -->
-<div style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;">
-    <div id="yt-player-div"></div>
-</div>
+<!-- AUDIO PARA LINKS CUSTOMIZADOS -->
+<audio id="goal-audio" src=""></audio>
 
 <script>
     const canvas = document.getElementById('canvas');
@@ -177,85 +181,95 @@
     let peer = null, conn = null;
     let isHost = false, isOnline = false;
 
-    // --- INTEGRANDO YOUTUBE PLAYER API ---
-    let ytPlayer = null;
-    let currentVideoId = "dQw4w9WgXcQ"; // Vídeo Padrão
-    let isYTReady = false;
+    // --- SITEMA DE ÁUDIO NATIVO (FUNCIONAL NO CELULAR) ---
+    let audioCtx = null;
 
-    // Carrega a biblioteca oficial do YouTube Iframe
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = function() {
-        ytPlayer = new YT.Player('yt-player-div', {
-            height: '1',
-            width: '1',
-            videoId: currentVideoId,
-            playerVars: { 'autoplay': 0, 'controls': 0, 'playsinline': 1 },
-            events: {
-                'onReady': () => { isYTReady = true; }
-            }
-        });
-    };
-
-    function extractYTId(urlOrId) {
-        const match = urlOrId.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*)/);
-        return (match && match[1].length === 11) ? match[1] : (urlOrId.length === 11 ? urlOrId : null);
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
     }
 
-    async function searchMusic() {
-        const query = document.getElementById('cust-music').value.trim();
-        const status = document.getElementById('music-status');
-        if (!query) return;
+    function toggleMp3Input() {
+        const type = document.getElementById('sound-type').value;
+        document.getElementById('mp3-box').style.display = type === 'custom' ? 'block' : 'none';
+    }
 
-        status.innerText = "⏳ Buscando música...";
+    // 1. Buzina de Estádio + Apito
+    function playStadiumHorn() {
+        const c = getAudioContext();
+        const now = c.currentTime;
 
-        // 1. Se for um link direto do YouTube
-        const directId = extractYTId(query);
-        if (directId) {
-            setMusicId(directId, "Música carregada via Link!");
-            return;
-        }
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 1.2);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 2.2);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + 2.2);
 
-        // 2. Se for texto, busca pela API pública sem backend
-        try {
-            const res = await fetch(`https://inv.tux.pizza/api/v1/search?q=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            if (data && data.length > 0 && data[0].videoId) {
-                setMusicId(data[0].videoId, `Encontrado: ${data[0].title.slice(0, 22)}...`);
-            } else {
-                status.innerText = "❌ Música não encontrada.";
-            }
-        } catch (e) {
-            // Tentativa em API alternativa
+        setTimeout(() => {
             try {
-                const res2 = await fetch(`https://invidious.drgns.space/api/v1/search?q=${encodeURIComponent(query)}`);
-                const data2 = await res2.json();
-                if (data2 && data2.length > 0 && data2[0].videoId) {
-                    setMusicId(data2[0].videoId, `Encontrado: ${data2[0].title.slice(0, 22)}...`);
-                    return;
-                }
-            } catch(err) {}
-            status.innerText = "Cole o link do YouTube direto!";
+                const osc2 = c.createOscillator();
+                const gain2 = c.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(2400, c.currentTime);
+                gain2.gain.setValueAtTime(0.3, c.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.4);
+                osc2.connect(gain2);
+                gain2.connect(c.destination);
+                osc2.start();
+                osc2.stop(c.currentTime + 0.4);
+            } catch(e){}
+        }, 200);
+    }
+
+    // 2. Som Eletrônico
+    function playTechnoGoal() {
+        const c = getAudioContext();
+        const now = c.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+        notes.forEach((freq, idx) => {
+            const osc = c.createOscillator();
+            const gain = c.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.4);
+            osc.connect(gain);
+            gain.connect(c.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.4);
+        });
+    }
+
+    // Toca o som selecionado
+    function playGoalSound() {
+        const type = document.getElementById('sound-type').value;
+        const mp3Url = document.getElementById('cust-music').value.trim();
+
+        if (type === 'custom' && mp3Url) {
+            const audioEl = document.getElementById('goal-audio');
+            audioEl.src = mp3Url;
+            audioEl.currentTime = 0;
+            audioEl.play().catch(() => playStadiumHorn());
+        } else if (type === 'techno') {
+            playTechnoGoal();
+        } else {
+            playStadiumHorn();
         }
     }
 
-    function setMusicId(id, msg) {
-        currentVideoId = id;
-        document.getElementById('music-status').innerText = "✅ " + msg;
-        if (ytPlayer && ytPlayer.loadVideoById) {
-            ytPlayer.loadVideoById(id);
-            ytPlayer.pauseVideo();
-        }
-    }
-
-    // Desbloqueia a reprodução no celular ao clicar em jogar
-    function primeAudio() {
-        if (ytPlayer && ytPlayer.playVideo) {
-            ytPlayer.playVideo();
-            setTimeout(() => { try { ytPlayer.pauseVideo(); } catch(e){} }, 100);
-        }
+    function testSound() {
+        playGoalSound();
     }
 
     // Estado do Jogo
@@ -289,7 +303,7 @@
     function startSolo() {
         requestFullscreen();
         updateCustomization();
-        primeAudio();
+        getAudioContext(); // Ativa permissão de som
         document.getElementById('menu').style.display = 'none';
         isHost = true; isOnline = false;
         initPhysicsLoop();
@@ -299,7 +313,7 @@
     function createRoom() {
         requestFullscreen();
         updateCustomization();
-        primeAudio();
+        getAudioContext();
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         peer = new Peer("haxpro-" + code);
 
@@ -313,7 +327,7 @@
     function joinRoom() {
         requestFullscreen();
         updateCustomization();
-        primeAudio();
+        getAudioContext();
         const code = document.getElementById('join-code').value.trim();
         if (!code) return alert("Digite o código da sala!");
 
@@ -359,31 +373,15 @@
         }, 1000);
     }
 
-    // TOCA MÚSICA NO GOL
-    function playGoalMusic() {
-        if (ytPlayer && isYTReady && ytPlayer.playVideo) {
-            try {
-                ytPlayer.seekTo(0);
-                ytPlayer.playVideo();
-            } catch(e){}
-        }
-    }
-
-    function stopGoalMusic() {
-        if (ytPlayer && isYTReady && ytPlayer.pauseVideo) {
-            try { ytPlayer.pauseVideo(); } catch(e){}
-        }
-    }
-
     function showGoalBanner(teamText) {
-        playGoalMusic();
+        playGoalSound();
         const banner = document.getElementById('goal-banner');
         document.getElementById('goal-subtext').innerText = teamText;
         banner.classList.add('show');
         
         setTimeout(() => {
             banner.classList.remove('show');
-        }, 4000);
+        }, 3000);
     }
 
     // CONTROLES TECLADO
@@ -637,10 +635,9 @@
         state.isGoalPause = true;
         showGoalBanner(text);
         setTimeout(() => {
-            stopGoalMusic();
             resetPositions();
             state.isGoalPause = false;
-        }, 4500);
+        }, 3200);
     }
 
     function resetPositions() {
