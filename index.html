@@ -3,51 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HaxBall Pro 2D - Balanço Perfeito</title>
+    <title>HaxBall Pro 2D - Modo Deitado</title>
     <!-- PeerJS para Multiplayer Online P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         * { touch-action: none; user-select: none; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #121212; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        html, body { width: 100vw; height: 100vh; background: #0e0e0e; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         
-        /* MENU INTERATIVO */
-        #menu { position: absolute; background: rgba(18, 18, 18, 0.95); padding: 25px; border-radius: 16px; text-align: center; z-index: 30; width: 90%; max-width: 380px; border: 2px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        #menu h1 { color: #2ecc71; font-size: 26px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        /* AVISO PARA GIRAR O CELULAR SE ESTIVER EM PÉ */
+        #rotate-device-msg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #121212; z-index: 100; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        #rotate-device-msg .icon { font-size: 50px; margin-bottom: 15px; animation: rotateAnim 2s infinite ease-in-out; }
+        #rotate-device-msg p { font-size: 18px; font-weight: bold; color: #f1c40f; }
+
+        @keyframes rotateAnim {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* MOSTRA AVISO APENAS EM MODO RETRATO (EM PÉ) */
+        @media (orientation: portrait) {
+            #rotate-device-msg { display: flex; }
+        }
+
+        /* MENU RESPONSIVO PARA MODO LANDSCAPE */
+        #menu { position: absolute; background: rgba(18, 18, 18, 0.95); padding: 15px 20px; border-radius: 16px; text-align: center; z-index: 40; width: 90%; max-width: 360px; max-height: 95vh; overflow-y: auto; border: 2px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        #menu h1 { color: #2ecc71; font-size: 22px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .customization-box { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #444; }
-        .customization-box h3 { font-size: 14px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; }
-        .custom-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
-        .custom-row label { font-size: 14px; }
-        .custom-row input[type="color"] { border: none; width: 40px; height: 30px; border-radius: 4px; cursor: pointer; background: none; }
-        .custom-row input[type="text"] { width: 80px; padding: 5px; font-size: 14px; text-align: center; border-radius: 4px; border: 1px solid #555; background: #333; color: white; font-weight: bold; }
+        .customization-box { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
+        .customization-box h3 { font-size: 12px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; }
+        .custom-row { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
+        .custom-row label { font-size: 13px; }
+        .custom-row input[type="color"] { border: none; width: 35px; height: 25px; border-radius: 4px; cursor: pointer; background: none; }
+        .custom-row input[type="text"] { width: 70px; padding: 4px; font-size: 13px; text-align: center; border-radius: 4px; border: 1px solid #555; background: #333; color: white; font-weight: bold; }
         
-        .btn-group button { width: 100%; padding: 12px; margin: 5px 0; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; transition: 0.2s; }
+        .btn-group button { width: 100%; padding: 10px; margin: 4px 0; font-size: 14px; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; transition: 0.2s; }
         .btn-solo { background: #e67e22; }
         .btn-host { background: #27ae60; }
         .btn-join { background: #2980b9; }
         .btn-group button:active { filter: brightness(1.2); transform: scale(0.98); }
         
-        #join-code { width: 100%; padding: 10px; margin: 6px 0; font-size: 16px; text-align: center; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; font-weight: bold; }
+        #join-code { width: 100%; padding: 8px; margin: 4px 0; font-size: 15px; text-align: center; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; font-weight: bold; }
         
-        /* ÁREA DO JOGO */
-        #game-container { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 850px; }
-        canvas { background: #2d5a27; border: 4px solid #fff; border-radius: 10px; width: 95vw; max-width: 800px; height: auto; box-shadow: 0 0 20px rgba(0,0,0,0.6); }
+        /* CONTAINER DE TELA CHEIA MODO DEITADO */
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        canvas { background: #2d5a27; border: 3px solid #fff; border-radius: 8px; max-width: 100vw; max-height: 100vh; width: auto; height: auto; aspect-ratio: 16 / 10; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         
-        /* ZONA TOUCH DO JOYSTICK */
-        #touch-zone-left { position: absolute; top: 0; left: 0; width: 60%; height: 100%; z-index: 10; }
+        /* ZONA DE TOQUE DO JOYSTICK (METADE ESQUERDA) */
+        #touch-zone-left { position: absolute; top: 0; left: 0; width: 50vw; height: 100vh; z-index: 10; }
         
         /* JOYSTICK DINÂMICO */
-        #joystick-base { display: none; position: absolute; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: none; z-index: 15; }
-        #joystick-stick { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.85); border-radius: 50%; position: absolute; top: 28px; left: 28px; pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        #joystick-base { display: none; position: absolute; width: 90px; height: 90px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: none; z-index: 15; }
+        #joystick-stick { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.85); border-radius: 50%; position: absolute; top: 25px; left: 25px; pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
         
-        /* BOTÃO CHUTAR */
-        #btn-kick { position: absolute; bottom: 20px; right: 25px; width: 85px; height: 85px; border-radius: 50%; background: #e74c3c; color: white; font-weight: bold; font-size: 16px; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 20; }
+        /* BOTÃO DE CHUTAR (SOBREPOSTO NO CANTO DIREITO) */
+        #btn-kick { position: absolute; bottom: 20px; right: 25px; width: 80px; height: 80px; border-radius: 50%; background: rgba(231, 76, 60, 0.8); color: white; font-weight: bold; font-size: 15px; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 20; }
         #btn-kick:active { background: #c0392b; transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-<!-- MENU DE CUSTOMIZAÇÃO E SALA -->
+<!-- AVISO MODO RETRATO -->
+<div id="rotate-device-msg">
+    <div class="icon">🔄📱</div>
+    <p>Por favor, vire o celular deitado (Modo Paisagem) para jogar!</p>
+</div>
+
+<!-- MENU -->
 <div id="menu">
     <h1>HaxBall Pro</h1>
     
@@ -70,13 +92,13 @@
     <div class="btn-group">
         <button class="btn-solo" onclick="startSolo()">⚽ Modo Treino (Solo)</button>
         <button class="btn-host" onclick="createRoom()">Criar Sala Online</button>
-        <div id="room-code-display" style="margin: 6px 0; font-size: 16px; font-weight: bold; color: #f1c40f;"></div>
-        <input type="number" id="join-code" placeholder="Digite o Código (4 dígitos)">
+        <div id="room-code-display" style="margin: 4px 0; font-size: 15px; font-weight: bold; color: #f1c40f;"></div>
+        <input type="number" id="join-code" placeholder="Código (4 dígitos)">
         <button class="btn-join" onclick="joinRoom()">Entrar na Sala</button>
     </div>
 </div>
 
-<!-- CONTAINER DO CANVAS E CONTROLES -->
+<!-- CONTAINER DO JOGO DEITADO -->
 <div id="game-container">
     <canvas id="canvas" width="800" height="500"></canvas>
     
@@ -93,22 +115,21 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // --- PARÂMETROS FÍSICOS RECALIBRADOS ---
+    // --- PARÂMETROS FÍSICOS AJUSTADOS ---
     const DT = 1 / 60;
     const PLAYER_RADIUS = 15;
     const BALL_RADIUS = 10;
     const POST_RADIUS = 8;
     
-    // Velocidade e Chute Equilibrados
-    const ACCEL = 0.58;        // Aceleração ágil e fluida
-    const DAMP_PLAYER = 0.88;  // Controle firme de parada
-    const DAMP_BALL = 0.990;   // Deslize realista do HaxBall
+    const ACCEL = 0.58;        // Aceleração fluida
+    const DAMP_PLAYER = 0.88;  // Controle firme
+    const DAMP_BALL = 0.990;   // Deslize suave da bola
     const MASS_PLAYER = 1.0;
     const MASS_BALL = 0.42;    
     const RESTITUTION_DRIBBLE = 0.35; // Colisão suave para carregar a bola
     const RESTITUTION_WALL = 0.95;
-    const KICK_RANGE = PLAYER_RADIUS + BALL_RADIUS + 12; // Alcance do chute (37px)
-    const KICK_IMPULSE = 6.2;  // Força de chute realista e controlada
+    const KICK_RANGE = PLAYER_RADIUS + BALL_RADIUS + 12; // Alcance do chute
+    const KICK_IMPULSE = 6.2;  // Força de chute calibrada
 
     // Campo & Goleiras Escavadas
     const PITCH_X1 = 60, PITCH_X2 = 740;
@@ -137,6 +158,15 @@
 
     let localInput = { x: 0, y: 0, kick: false };
 
+    function requestFullscreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+        }
+    }
+
     function updateCustomization() {
         state.p1.avatar = document.getElementById('cust-number').value || '10';
         state.p1.color = document.getElementById('cust-color').value;
@@ -144,6 +174,7 @@
     }
 
     function startSolo() {
+        requestFullscreen();
         updateCustomization();
         document.getElementById('menu').style.display = 'none';
         isHost = true; isOnline = false;
@@ -151,6 +182,7 @@
     }
 
     function createRoom() {
+        requestFullscreen();
         updateCustomization();
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         peer = new Peer("haxpro-" + code);
@@ -163,6 +195,7 @@
     }
 
     function joinRoom() {
+        requestFullscreen();
         updateCustomization();
         const code = document.getElementById('join-code').value.trim();
         if (!code) return alert("Digite o código da sala!");
@@ -216,7 +249,7 @@
         sendInput();
     }
 
-    // --- JOYSTICK DINÂMICO ---
+    // --- JOYSTICK DINÂMICO MODO LANDSCAPE ---
     const touchZone = document.getElementById('touch-zone-left');
     const base = document.getElementById('joystick-base');
     const stick = document.getElementById('joystick-stick');
@@ -228,12 +261,11 @@
         const touch = e.changedTouches[0];
         stickTouchId = touch.identifier;
         
-        const rect = document.getElementById('game-container').getBoundingClientRect();
-        touchOrigin.x = touch.clientX - rect.left;
-        touchOrigin.y = touch.clientY - rect.top;
+        touchOrigin.x = touch.clientX;
+        touchOrigin.y = touch.clientY;
 
-        base.style.left = (touchOrigin.x - 50) + 'px';
-        base.style.top = (touchOrigin.y - 50) + 'px';
+        base.style.left = (touchOrigin.x - 45) + 'px';
+        base.style.top = (touchOrigin.y - 45) + 'px';
         base.style.display = 'block';
         stick.style.transform = `translate(0px, 0px)`;
     });
@@ -242,13 +274,9 @@
         e.preventDefault();
         for (let t of e.changedTouches) {
             if (t.identifier === stickTouchId) {
-                const rect = document.getElementById('game-container').getBoundingClientRect();
-                const currentX = t.clientX - rect.left;
-                const currentY = t.clientY - rect.top;
-
-                let dx = currentX - touchOrigin.x;
-                let dy = currentY - touchOrigin.y;
-                const maxR = 35;
+                let dx = t.clientX - touchOrigin.x;
+                let dy = t.clientY - touchOrigin.y;
+                const maxR = 30;
                 const dist = Math.hypot(dx, dy);
 
                 if (dist > maxR) {
@@ -278,7 +306,7 @@
     touchZone.addEventListener('touchend', resetJoystick);
     touchZone.addEventListener('touchcancel', resetJoystick);
 
-    // Botão de Chutar
+    // Botão Chutar
     const kickBtn = document.getElementById('btn-kick');
     kickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); localInput.kick = true; sendInput(); });
     kickBtn.addEventListener('touchend', (e) => { e.preventDefault(); localInput.kick = false; sendInput(); });
@@ -301,7 +329,7 @@
     function updatePhysics() {
         const activePlayers = isOnline ? [state.p1, state.p2] : [state.p1];
 
-        // 1. Movimento dos Jogadores
+        // 1. Movimento
         activePlayers.forEach(p => {
             p.vx += p.input.x * ACCEL;
             p.vy += p.input.y * ACCEL;
@@ -323,14 +351,12 @@
             let dy = state.ball.y - p.y;
             let dist = Math.hypot(dx, dy);
 
-            // CHUTE DOSADO
             if (p.input.kick && dist <= KICK_RANGE && dist > 0) {
                 let nx = dx / dist;
                 let ny = dy / dist;
                 state.ball.vx = nx * KICK_IMPULSE + p.vx * 0.25;
                 state.ball.vy = ny * KICK_IMPULSE + p.vy * 0.25;
             } else {
-                // Condução/Dribble Suave ao Encostar
                 resolveCircleCollision(p, state.ball, MASS_PLAYER, MASS_BALL, RESTITUTION_DRIBBLE);
             }
         });
