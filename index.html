@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HaxBall Pro 2D - HUD & YouTube Fix</title>
+    <title>HaxBall Pro 2D - Botão Sair</title>
     <!-- PeerJS para Multiplayer Online P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -23,7 +23,7 @@
 
         @media (orientation: portrait) { #rotate-device-msg { display: flex; } }
 
-        /* MENU RESPONSIVO COMPACTO (EM 2 COLUNAS NO MODO DEITADO) */
+        /* MENU RESPONSIVO COMPACTO */
         #menu { position: absolute; background: rgba(18, 18, 18, 0.96); padding: 12px 18px; border-radius: 14px; text-align: center; z-index: 50; width: 95%; max-width: 620px; max-height: 92vh; overflow-y: auto; border: 2px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
         #menu h1 { color: #2ecc71; font-size: 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -54,6 +54,10 @@
         #game-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         canvas { background: #2d5a27; border: 3px solid #fff; border-radius: 8px; max-width: 100vw; max-height: 100vh; width: auto; height: auto; aspect-ratio: 16 / 10; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         
+        /* BOTÃO DE SAIR / CANCELAR PARTIDA */
+        #btn-exit { position: absolute; top: 12px; left: 15px; padding: 6px 12px; background: rgba(231, 76, 60, 0.85); color: white; border: 2px solid white; border-radius: 6px; font-size: 12px; font-weight: bold; z-index: 30; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        #btn-exit:active { background: #c0392b; transform: scale(0.95); }
+
         /* TOUCH CONTROLS */
         #touch-zone-left { position: absolute; top: 0; left: 0; width: 50vw; height: 100vh; z-index: 10; }
         #joystick-base { display: none; position: absolute; width: 90px; height: 90px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: none; z-index: 15; }
@@ -153,6 +157,9 @@
 <div id="game-container">
     <canvas id="canvas" width="800" height="500"></canvas>
     
+    <!-- BOTÃO SAIR DA PARTIDA -->
+    <button id="btn-exit" onclick="exitGame()">🚪 SAIR</button>
+
     <div id="touch-zone-left"></div>
     <div id="joystick-base"><div id="joystick-stick"></div></div>
     
@@ -202,7 +209,7 @@
 
     // --- INTEGRANDO YOUTUBE PLAYER API ---
     let ytPlayer = null;
-    let currentVideoId = "0Qqd6T_A9LY"; // Hino da Champions
+    let currentVideoId = "0Qqd6T_A9LY";
     let isYTReady = false;
 
     function onYouTubeIframeAPIReady() {
@@ -272,7 +279,7 @@
                 ytPlayer.playVideo();
             } catch(e){}
         } else {
-            playStadiumHorn(); // Som de apoio caso o YT falhe
+            playStadiumHorn();
         }
     }
 
@@ -392,23 +399,39 @@
         });
     }
 
+    // BOTÃO DE SAIR / CANCELAR A PARTIDA
+    function exitGame() {
+        if (confirm("Deseja realmente sair e cancelar a partida?")) {
+            // Desconecta conexões P2P se houver
+            if (conn) { try { conn.close(); } catch(e){} conn = null; }
+            if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+
+            // Para música e banners
+            stopGoalMusic();
+            document.getElementById('goal-banner').classList.remove('show');
+
+            // Reseta variáveis do jogo
+            isHost = false;
+            isOnline = false;
+            state.isGoalPause = false;
+            state.score = { p1: 0, p2: 0 };
+            state.timeRemaining = 180;
+            resetPositions();
+
+            // Limpa código da sala
+            document.getElementById('room-code-display').innerText = "";
+
+            // Reexibe o Menu
+            document.getElementById('menu').style.display = 'block';
+        }
+    }
+
     function startMatchTimer() {
         setInterval(() => {
             if (isHost && !state.isGoalPause && state.timeRemaining > 0) {
                 state.timeRemaining--;
             }
         }, 1000);
-    }
-
-    function showGoalBanner(teamText) {
-        playGoalMusic();
-        const banner = document.getElementById('goal-banner');
-        document.getElementById('goal-subtext').innerText = teamText;
-        banner.classList.add('show');
-        
-        setTimeout(() => {
-            banner.classList.remove('show');
-        }, 4000);
     }
 
     // CONTROLES TECLADO
