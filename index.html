@@ -1,21 +1,4 @@
-Descobri exatamente o motivo de ter travado tudo:
 
-1.  Na resposta anterior, a mensagem da Parte 2 acabou repetindo o começo da
-    Parte 1 e cortou no meio — ao colar, o <script> ficou com erro de sintaxe
-    (por isso nenhum botão clicava e a tela ficava travada).
-2.  Além disso, em alguns celulares abrindo arquivo .html direto da pasta
-    Downloads, o IndexedDB pode travar esperando permissão. Já corrigi isso
-    colocando inicialização instantânea + tempo limite de 400ms (se o celular
-    bloquear o IndexedDB, ele cai automaticamente para o localStorage sem travar
-    nada!).
-
-Vamos fazer limpo e do zero em 2 partes exatas (sem repetir nada):
-
-1.  Crie um arquivo novo vazio nexus-rpg.html.
-2.  Cole esta PARTE 1 de 2 inteira lá dentro e depois me responda "parte 2" que
-    eu envio somente a segunda metade até o </html>.
-
-📄 PARTE 1 de 2
 
 <!DOCTYPE html>
 <html lang="pt-BR">
